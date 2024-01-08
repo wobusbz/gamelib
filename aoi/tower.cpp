@@ -110,7 +110,6 @@ void aoi::TowerAOIMannger::Moved(TowerObj* obj, int x, int y)
 	if (obj->X() == x && obj->Y() == y) {
 		return;
 	}
-	// std::cout << "old: " << obj->ID() << "\t x: " << obj->X() << "\t y: " << obj->Y() << "\n";
 	obj->m_towerAOI->removeObjs(obj);
 	int oldMinX = transX(obj->X() - obj->m_dist);
 	int oldMaxX = transX(obj->X() + obj->m_dist);
@@ -162,7 +161,7 @@ void aoi::TowerAOI::addObjs(TowerObj* obj, TowerAOI* fromObjs)
 			if (it.second->ID() == obj->ID()) {
 				continue;
 			} 
-			it.second->OnEnter(obj);
+			it.second->OnEnter({ obj });
 		}
 	}
 	else {
@@ -174,7 +173,7 @@ void aoi::TowerAOI::addObjs(TowerObj* obj, TowerAOI* fromObjs)
 			if (itWatchers != m_watchers.end()) {
 				continue;
 			}
-			it.second->OnLeave(obj);
+			it.second->OnLeave({ obj });
 		}
 		for (auto& it : m_watchers) {
 			if (it.second->ID() == obj->ID()) {
@@ -184,7 +183,7 @@ void aoi::TowerAOI::addObjs(TowerObj* obj, TowerAOI* fromObjs)
 			if (itWatchers != fromObjs->m_watchers.end()) {
 				continue;
 			}
-			it.second->OnEnter(obj);
+			it.second->OnEnter({ obj });
 		}
 	}
 }
@@ -195,12 +194,17 @@ void aoi::TowerAOI::addWatchersObj(TowerObj* obj)
 	if (itWatchers == m_watchers.end()) {
 		m_watchers[obj->ID()] = obj;
 	}
+	std::vector<TowerObj*> objs;
 	for (auto& it : m_objs) {
 		if (it.second->ID() == obj->ID()) {
 			continue;
 		}
-		obj->OnEnter(it.second);
+		objs.emplace_back(it.second);
 	}
+	if (objs.empty()) {
+		return;
+	}
+	obj->OnEnter(objs);
 }
 
 void aoi::TowerAOI::removeObjs(TowerObj* obj, bool notify)
@@ -213,17 +217,22 @@ void aoi::TowerAOI::removeObjs(TowerObj* obj, bool notify)
 		if (it.second->ID() == obj->ID()) {
 			continue;
 		}
-		it.second->OnLeave(obj);
+		it.second->OnLeave({ obj });
 	}
 }
 
 void aoi::TowerAOI::removeWatchersObj(TowerObj* obj)
 {
 	m_watchers.erase(obj->ID());
+	std::vector<TowerObj*> objs;
 	for (auto& it : m_objs) {
 		if (it.second->ID() == obj->ID()) {
 			continue;
 		}
-		obj->OnLeave(it.second);
+		objs.emplace_back(it.second);
 	}
+	if (objs.empty()) {
+		return;
+	}
+	obj->OnLeave(objs);
 }
