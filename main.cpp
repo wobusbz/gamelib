@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
 		// towerMannger.Moved(it, 400+ Rand(300), 500 + Rand(200));
 	}
 	for (auto it : objs) {
-		it = nullptr;
 		delete it;
+		it = nullptr;
 	}
 	objs.clear();
 	return 0;
