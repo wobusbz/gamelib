@@ -6,7 +6,6 @@
 
 namespace aoi {
 
-class TowerObj;
 class TowerAOI;
 
 class TowerObj {

@@ -32,6 +32,7 @@ public:
 	void Leave(TowerObj* obj);
 
 	int GridID(int x, int y);
+	bool visitWatchedGridObjs(TowerObj* obj, std::function<void(Grid*)>);
 	bool visitWatchedGridObjs(TowerObj* obj, std::unordered_map<uint64_t, TowerObj*> & objs);
 	bool visitWatchedGridObjs(TowerObj* obj, std::vector<TowerObj*> & objs);
 

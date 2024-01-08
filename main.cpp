@@ -48,13 +48,13 @@ int main(int argc, char** argv) {
 	std::vector<Objec*> objs;
 	for (int i = 1; i < 1000; i++) {
 		Objec* obj = new Objec(i);
-		// gridMannger.Enter(obj);
-		towerMannger.Enter(obj);
+		gridMannger.Enter(obj);
+		// towerMannger.Enter(obj);
 		objs.emplace_back(obj);
 	}
 	for (auto it : objs) {
-		// gridMannger.Moved(it, 400+ Rand(300), 500 + Rand(200));
-		towerMannger.Moved(it, 400+ Rand(300), 500 + Rand(200));
+		gridMannger.Moved(it, 400+ Rand(300), 500 + Rand(200));
+		// towerMannger.Moved(it, 400+ Rand(300), 500 + Rand(200));
 	}
 	for (auto it : objs) {
 		it = nullptr;

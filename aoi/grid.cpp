@@ -135,7 +135,7 @@ int aoi::GridAOIMannger::GridID(int x, int y)
 	return transY(y) * m_xNum + transX(x);
 }
 
-bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map<uint64_t, TowerObj*> & objs)
+bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::function<void(Grid*)> cbFunc)
 {
 	auto itGrids = m_grids.find(GridID(obj->X(), obj->Y()));
 	if (itGrids == m_grids.end()) {
@@ -152,53 +152,36 @@ bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map
 			continue;
 		}
 		auto itNewGrids = m_grids.find(newY * m_xNum + newX);
-		if (itNewGrids == m_grids.end()) {
+		if (itNewGrids == m_grids.end() || !cbFunc) {
 			continue;
 		}
-		for (auto & itGridObj : itNewGrids->second->m_objs) {
+		cbFunc(itNewGrids->second);
+	}
+	return true;
+}
+
+bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map<uint64_t, TowerObj*> & objs)
+{
+	return visitWatchedGridObjs(obj, [&](Grid* gridObj) {
+		for (auto& itGridObj : gridObj->m_objs) {
 			if (itGridObj.second->ID() == obj->ID()) {
 				continue;
 			}
 			objs[itGridObj.second->ID()] = itGridObj.second;
 		}
-	}
-	return true;
+	});
 }
 
 bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::vector<TowerObj*>& objs)
 {
-	auto itGrids = m_grids.find(GridID(obj->X(), obj->Y()));
-	if (itGrids == m_grids.end()) {
-		return false;
-	}
-	for (auto& itGridObj : itGrids->second->m_objs) {
-		if (itGridObj.second->ID() == obj->ID()) {
-			continue;
-		}
-		objs.emplace_back(itGridObj.second);
-	}
-	int x = transX(obj->X());
-	int y = transY(obj->Y());
-	int dx[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
-	int dy[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-	for (int i = 0; i < 8; i++) {
-		int newX = x + dx[i];
-		int newY = y + dy[i];
-		if (newX <= 0 && newX >= m_xNum && newY <= 0 && newY >= m_yNum) {
-			continue;
-		}
-		auto itNewGrids = m_grids.find(newY * m_xNum + newX);
-		if (itNewGrids == m_grids.end()) {
-			continue;
-		}
-		for (auto& itGridObj : itNewGrids->second->m_objs) {
+	return visitWatchedGridObjs(obj, [&](Grid* gridObj) {
+		for (auto& itGridObj : gridObj->m_objs) {
 			if (itGridObj.second->ID() == obj->ID()) {
 				continue;
 			}
 			objs.emplace_back(itGridObj.second);
 		}
-	}
-	return true;
+	});
 }
 
 void aoi::GridAOIMannger::initGrid()
