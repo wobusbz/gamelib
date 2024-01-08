@@ -162,7 +162,7 @@ bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::function<void
 	for (int i = 0; i < 8; i++) {
 		int newX = x + dx[i];
 		int newY = y + dy[i];
-		if (newX < 0 && newX >= m_xNum && newY < 0 && newY >= m_yNum) {
+		if (newX < 0 || newX >= m_xNum || newY < 0 || newY >= m_yNum) {
 			continue;
 		}
 		auto itNewGrids = m_grids.find(newY * m_xNum + newX);
@@ -219,8 +219,8 @@ void aoi::GridAOIMannger::initGrid()
 int aoi::GridAOIMannger::transX(int x)
 {
 	int tx = (int)(std::ceil(x - m_minY) / (double)m_xSize);
-	if (tx <= 0) {
-		tx = 1;
+	if (tx < 0) {
+		tx = 0;
 	}
 	return tx;
 }
@@ -228,8 +228,8 @@ int aoi::GridAOIMannger::transX(int x)
 int aoi::GridAOIMannger::transY(int y)
 {
 	int ty = (int)(std::ceil(y - m_minY) / (double)m_ySize);
-	if (ty <= 0) {
-		ty = 1;
+	if (ty < 0) {
+		ty = 0;
 	}
 	return ty;
 }
