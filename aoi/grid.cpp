@@ -220,7 +220,7 @@ int aoi::GridAOIMannger::transX(int x)
 {
 	int tx = (int)(std::ceil(x - m_minY) / (double)m_xSize);
 	if (tx < 0) {
-		tx = 0;
+		tx = 1;
 	}
 	return tx;
 }
