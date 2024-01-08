@@ -9,16 +9,6 @@ namespace aoi {
 class TowerObj;
 class TowerAOI;
 
-class ObJectAOI {
-public:
-	~ObJectAOI() {};
-	virtual void addObjs(TowerObj* obj, ObJectAOI* fromObjs = nullptr) = 0;
-	virtual void addWatchersObj(TowerObj* obj) = 0;
-	virtual void removeObjs(TowerObj* obj, bool notify = false) = 0;
-	virtual void removeWatchersObj(TowerObj* obj) = 0;
-	virtual bool hasWatchersObj(TowerObj* obj) = 0;
-};
-
 class TowerObj {
 	friend class TowerAOI;
 	friend class GridAOIMannger;
