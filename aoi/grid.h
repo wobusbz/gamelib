@@ -11,11 +11,12 @@ namespace aoi {
 
 class Grid {
 	friend class GridAOIMannger;
-public:
 	Grid(int id);
 	~Grid();
+public:
 	void addObjs(TowerObj* obj) ;
 	void removeObjs(TowerObj* obj);
+	bool hasObjs(TowerObj* obj);
 
 private:
 	int		m_gridId;

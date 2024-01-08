@@ -13,12 +13,27 @@ aoi::Grid::~Grid()
 
 void aoi::Grid::addObjs(TowerObj* obj)
 {
+	if (hasObjs(obj)) {
+		return;
+	}
 	m_objs[obj->ID()] = obj;
 }
 
 void aoi::Grid::removeObjs(TowerObj* obj)
 {
+	if (!hasObjs(obj)) {
+		return;
+	}
 	m_objs.erase(obj->ID());
+}
+
+bool aoi::Grid::hasObjs(TowerObj* obj)
+{
+	auto itObjs = m_objs.find(obj->ID());
+	if (itObjs == m_objs.end()) {
+		return false;
+	}
+	return true;
 }
 
 aoi::GridAOIMannger::GridAOIMannger(int minX, int minY, int maxX, int maxY, int xSize, int ySize):
@@ -64,10 +79,9 @@ void aoi::GridAOIMannger::Moved(TowerObj* obj, int x, int y)
 	if (obj->X() == x && obj->Y() == y) {
 		return;
 	}
+
 	std::unordered_map<uint64_t, TowerObj*> oldObjs;
-	if (!visitWatchedGridObjs(obj, oldObjs)) {
-		return;
-	}
+	visitWatchedGridObjs(obj, oldObjs);
 	int oldGridID = GridID(obj->X(), obj->Y());
 	auto itOldGrids = m_grids.find(oldGridID);
 	if (itOldGrids == m_grids.end()) {
@@ -78,10 +92,7 @@ void aoi::GridAOIMannger::Moved(TowerObj* obj, int x, int y)
 	std::unordered_map<uint64_t, TowerObj*> newObjs;
 	obj->m_x = x;
 	obj->m_y = y;
-	if (!visitWatchedGridObjs(obj, newObjs)) {
-		return;
-	}
-
+	visitWatchedGridObjs(obj, newObjs);
 	int newGridID = GridID(obj->X(), obj->Y());
 	auto itNewGrids = m_grids.find(newGridID);
 	if (itNewGrids == m_grids.end()) {
@@ -123,7 +134,9 @@ void aoi::GridAOIMannger::Leave(TowerObj* obj)
 	}
 	itGrids->second->removeObjs(obj);
 	std::vector<TowerObj*> objs;
-	visitWatchedGridObjs(obj, objs);
+	if (!visitWatchedGridObjs(obj, objs)) {
+		return;
+	}
 	for (auto it : objs) {
 		it->OnLeave({ obj });
 	}
@@ -138,9 +151,10 @@ int aoi::GridAOIMannger::GridID(int x, int y)
 bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::function<void(Grid*)> cbFunc)
 {
 	auto itGrids = m_grids.find(GridID(obj->X(), obj->Y()));
-	if (itGrids == m_grids.end()) {
+	if (itGrids == m_grids.end() || !cbFunc) {
 		return false;
 	}
+	cbFunc(itGrids->second);
 	int x = transX(obj->X());
 	int y = transY(obj->Y());
 	int dx[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
@@ -152,7 +166,7 @@ bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::function<void
 			continue;
 		}
 		auto itNewGrids = m_grids.find(newY * m_xNum + newX);
-		if (itNewGrids == m_grids.end() || !cbFunc) {
+		if (itNewGrids == m_grids.end()) {
 			continue;
 		}
 		cbFunc(itNewGrids->second);
@@ -162,26 +176,32 @@ bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::function<void
 
 bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map<uint64_t, TowerObj*> & objs)
 {
-	return visitWatchedGridObjs(obj, [&](Grid* gridObj) {
+	if (!visitWatchedGridObjs(obj, [&](Grid* gridObj) {
 		for (auto& itGridObj : gridObj->m_objs) {
 			if (itGridObj.second->ID() == obj->ID()) {
 				continue;
 			}
 			objs[itGridObj.second->ID()] = itGridObj.second;
 		}
-	});
+		})) {
+		return false;
+	}
+	return objs.size() > 0;
 }
 
 bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::vector<TowerObj*>& objs)
 {
-	return visitWatchedGridObjs(obj, [&](Grid* gridObj) {
+	if (!visitWatchedGridObjs(obj, [&](Grid* gridObj) {
 		for (auto& itGridObj : gridObj->m_objs) {
 			if (itGridObj.second->ID() == obj->ID()) {
 				continue;
 			}
 			objs.emplace_back(itGridObj.second);
 		}
-	});
+		})) {
+		return false;
+	}
+	return objs.size() > 0;
 }
 
 void aoi::GridAOIMannger::initGrid()
