@@ -219,7 +219,7 @@ void aoi::GridAOIMannger::initGrid()
 int aoi::GridAOIMannger::transX(int x)
 {
 	int tx = (int)(std::ceil(x - m_minY) / (double)m_xSize);
-	if (tx < 0) {
+	if (tx <= 0) {
 		tx = 1;
 	}
 	return tx;
@@ -228,7 +228,7 @@ int aoi::GridAOIMannger::transX(int x)
 int aoi::GridAOIMannger::transY(int y)
 {
 	int ty = (int)(std::ceil(y - m_minY) / (double)m_ySize);
-	if (ty < 0) {
+	if (ty <= 0) {
 		ty = 1;
 	}
 	return ty;
