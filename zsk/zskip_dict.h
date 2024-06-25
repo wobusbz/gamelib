@@ -5,8 +5,8 @@
 #endif
 
 #include <functional>
-#include <iostream>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace zsk {
@@ -144,7 +144,7 @@ public:
       if (!callback) {
         return;
       }
-      if (!callback(node->m_Value, it->second->getEle())) {
+      if (callback(node->m_Value, it->second->getEle())) {
         return;
       }
     });
