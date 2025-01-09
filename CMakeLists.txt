@@ -8,8 +8,8 @@ endif()
 
 project ("gamelib")
 
-file(GLOB_RECURSE HEADER_FILES zsk/*.h aoi/*.h)
-file(GLOB_RECURSE SOURCE_FILES zsk/*.cpp aoi/*.cpp)
+file(GLOB_RECURSE HEADER_FILES zskip/*.h aoi/*.h)
+file(GLOB_RECURSE SOURCE_FILES zskip/*.cpp aoi/*.cpp)
 
 message(STATUS "zsk 文件目录" ${HEADER_FILES} ${SOURCE_FILES})
 

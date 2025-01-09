@@ -9,7 +9,8 @@
 #include <string>
 #include <vector>
 
-namespace zsk {
+namespace zskip {
+
 struct ZskipNode;
 struct zskipLevel {
     ZskipNode* m_Forward; // 前进指针，指向的是当前节点本身
@@ -75,10 +76,10 @@ private:
 };
 
 template <typename T>
-class ZslDict {
+class ZskipDict {
 public:
-    ZslDict(int level) : m_Zsl(new ZskipList(level)), m_Level(level) {}
-    virtual ~ZslDict() {
+    ZskipDict(int level) : m_Zsl(new ZskipList(level)), m_Level(level) {}
+    virtual ~ZskipDict() {
         for (auto it = m_Dict.begin(); it != m_Dict.end(); ++it) {
             if (!it->second) {
                 continue;
@@ -169,6 +170,6 @@ private:
     ZskipList* m_Zsl;
     int64_t m_Level;
 };
-} // namespace zsk
+} // namespace zskip
 
 #endif

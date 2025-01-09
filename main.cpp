@@ -1,8 +1,10 @@
 #include <iostream>
 #include <random>
+#include <string>
 
 #include "aoi/grid.h"
 #include "aoi/tower.h"
+#include "zskip/zskip_dict.h"
 
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -57,5 +59,13 @@ int main(int argc, char** argv) {
         it = nullptr;
     }
     objs.clear();
+
+    zskip::ZskipList zskipDict(10);
+    zskipDict.zslInsert(101, "101");
+    zskipDict.zslInsert(102, "102");
+    zskipDict.zslInsert(100, "100");
+    /*zskipDict.zslRange(0, 10000, true, [&](zskip::ZskipNode* node) { std::cout << node->m_Value << std::endl; });*/
+    zskipDict.print();
+    std::cout << zskipDict.zslLen() << std::endl;
     return 0;
 }

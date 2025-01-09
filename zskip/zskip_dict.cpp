@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace zsk {
+namespace zskip {
 ZskipNode::ZskipNode(int level, uint64_t score, std::string value)
     : m_Score(score), m_Value(value), m_Backward(nullptr) {
     m_Level.resize(level);
@@ -215,12 +215,12 @@ void ZskipList::print() {
     for (int i = m_Level - 1; i >= 0; i--) {
         ZskipNode* head = m_Head;
         while (head && head->m_Level[i]->m_Forward) {
-            std::cout << "value: " << head->m_Value << " score: " << head->m_Level[i]->m_Forward->m_Score
-                      << "\t span: " << head->m_Level[i]->m_Span << "\t"
-                      << "level: " << m_Level << "\t";
+            std::cout << "value: " << head->m_Level[i]->m_Forward->m_Value
+                      << "\tscore: " << head->m_Level[i]->m_Forward->m_Score << "\tspan: " << head->m_Level[i]->m_Span
+                      << "\tlevel: " << i << "\n";
             head = head->m_Level[i]->m_Forward;
         }
         std::cout << std::endl;
     }
 }
-}; // namespace zsk
+}; // namespace zskip
