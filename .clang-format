@@ -1,0 +1,36 @@
+# --- 通用格式设置 ---
+AccessModifierOffset: -4                       # 访问修饰符缩进 4 个空格。
+ColumnLimit: 120                               # 每行最大字符数。
+IndentWidth: 4                                 # 缩进宽度。
+UseTab: Never                                  # 不使用制表符，使用空格。
+
+# --- 大括号与控制结构 ---
+BreakBeforeBraces: Attach                      # 大括号附加到控制结构后。
+SpaceBeforeParens: ControlStatements           # 控制结构括号前留空格。
+
+# --- 函数与参数对齐 ---
+AllowShortFunctionsOnASingleLine: All          # 允许短函数放在单行。
+BinPackArguments: true                         # 参数尝试打包在同一行中。
+
+# --- 缩进规则 ---
+IndentCaseLabels: true                         # 缩进 case 标签。
+
+# --- 空格规则 ---
+PointerAlignment: Left                         # 指针对齐方式为左对齐。
+SpaceBeforeAssignmentOperators: true           # 赋值运算符前后留空格。
+
+# --- 注释相关 ---
+ReflowComments: true                           # 自动重新调整注释格式。
+
+# --- 特殊代码块 ---
+BreakBeforeTernaryOperators: true              # 在三元运算符的操作数之间换行。
+BreakTemplateDeclarations: Yes                 # 模板声明在适当位置换行。
+
+# --- 构造函数与继承 ---
+ConstructorInitializerIndentWidth: 4           # 构造函数初始化列表缩进宽度。
+BreakConstructorInitializers: BeforeColon      # 构造函数初始化列表在冒号前换行。
+
+# --- 其他规则 ---
+SortIncludes: CaseSensitive                    # 按字母顺序排序包含头文件。
+NamespaceIndentation: None                     # 不缩进命名空间。
+
