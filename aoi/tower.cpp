@@ -1,4 +1,5 @@
 #include "tower.h"
+#include <vector>
 
 aoi::TowerObj::TowerObj() : m_x(0), m_y(0), m_z(0), m_dist(0) {}
 
@@ -44,6 +45,23 @@ int aoi::TowerAOIMannger::transY(int y) const {
 
 aoi::TowerAOI* aoi::TowerAOIMannger::getTower(int x, int y) { return m_towers[transX(x)][transY(y)]; }
 
+std::unordered_set<aoi::TowerAOI*> aoi::TowerAOIMannger::getWatchedTowers(int x, int y, int range) const {
+    std::unordered_set<aoi::TowerAOI*> towers;
+    if (range < 0) {
+        return towers;
+    }
+    int minX = transX(x - range);
+    int maxX = transX(x + range);
+    int minY = transX(y - range);
+    int maxY = transX(y + range);
+    for (int xi = minX; xi <= maxX; xi++) {
+        for (int yj = minY; yj <= maxY; yj++) {
+            towers.insert(m_towers[xi][yj]);
+        }
+    }
+    return towers;
+}
+
 void aoi::TowerAOIMannger::initialize() {
     m_xTowerNum = (m_maxX - m_minX) / m_range + 1;
     m_yTowerNum = (m_maxY - m_minY) / m_range + 1;
@@ -68,46 +86,50 @@ void aoi::TowerAOIMannger::enter(TowerObj* obj) {
 }
 
 void aoi::TowerAOIMannger::moved(TowerObj* obj, int x, int y) {
-    if ((obj->x() == x && obj->y() == y) || (obj->x() == x && obj->y() == y)) {
+    if (obj->x() == x && obj->y() == y) {
         return;
     }
-    auto oldTower = obj->m_towerAOI;
-    int oldMinX = transX(obj->x() - obj->dist());
-    int oldMaxX = transX(obj->x() + obj->dist());
-    int oldMinY = transY(obj->y() - obj->dist());
-    int oldMaxY = transY(obj->y() + obj->dist());
+
+    auto oldTower = getWatchedTowers(obj->x(), obj->y(), obj->dist());
+    auto newTower = getWatchedTowers(x, y, obj->dist());
+
+    std::vector<TowerAOI*> towersToLevels;
+    towersToLevels.resize(oldTower.size());
+    for (auto tower : oldTower) {
+        if (newTower.find(tower) != newTower.end()) {
+            continue;
+        }
+        towersToLevels.emplace_back(tower);
+    }
+
+    std::vector<TowerAOI*> towersToEnters;
+    towersToLevels.resize(oldTower.size());
+    for (auto tower : newTower) {
+        if (oldTower.find(tower) != oldTower.end()) {
+            continue;
+        }
+        towersToEnters.emplace_back(tower);
+    }
+
+    for (auto tower : towersToLevels) {
+        tower->removeWatchersObj(obj);
+    }
+
+    for (auto tower : towersToEnters) {
+        tower->addWatchersObj(obj);
+    }
+
     obj->x(x);
     obj->y(y);
 
-    auto newTower = getTower(x, y);
-    if (newTower != oldTower) {
-        if (oldTower) {
-            oldTower->removeObjs(obj);
-        }
-        newTower->addObjs(obj, oldTower);
-        obj->m_towerAOI = newTower;
+    auto newObjTower = getTower(x, y);
+    if (obj->m_towerAOI == newObjTower) {
+        return;
     }
-
-    int newMinX = transX(obj->x() - obj->dist());
-    int newMaxX = transX(obj->x() + obj->dist());
-    int newMinY = transY(obj->y() - obj->dist());
-    int newMaxY = transY(obj->y() + obj->dist());
-    for (int xi = oldMinX; xi <= oldMaxX; xi++) {
-        for (int yj = oldMinY; yj <= oldMaxY; yj++) {
-            if (xi >= newMinX && xi <= newMaxX && yj >= newMinY && yj <= newMaxY) {
-                continue;
-            }
-            m_towers[xi][yj]->removeWatchersObj(obj);
-        }
+    if (obj->m_towerAOI) {
+        obj->m_towerAOI->removeObjs(obj);
     }
-    for (int xi = newMinX; xi <= newMaxX; xi++) {
-        for (int yj = newMinY; yj <= newMaxY; yj++) {
-            if (xi >= oldMinX && xi <= oldMaxX && yj >= oldMinY && yj <= oldMaxY) {
-                continue;
-            }
-            m_towers[xi][yj]->addWatchersObj(obj);
-        }
-    }
+    newObjTower->addObjs(obj);
 }
 
 void aoi::TowerAOIMannger::leave(TowerObj* obj) {

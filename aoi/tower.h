@@ -2,6 +2,7 @@
 #define __TOWER_H__
 
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "object_aoi.h"
@@ -39,6 +40,7 @@ private:
     int transY(int y) const;
 
     TowerAOI* getTower(int x, int y);
+    std::unordered_set<TowerAOI*> getWatchedTowers(int x, int y, int range) const;
 
     template <typename Function>
     void visitWatchedTowersByWorld(int x, int y, int range, Function&& fn) {
