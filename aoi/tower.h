@@ -1,7 +1,6 @@
 #ifndef __TOWER_H__
 #define __TOWER_H__
 
-#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -11,6 +10,12 @@ namespace aoi {
 
 class TowerAOI {
     friend class TowerAOIMannger;
+
+    static inline int dist2(TowerObj* a, TowerObj* b) {
+        int dx = a->x() - b->x();
+        int dy = a->y() - b->y();
+        return dx * dx + dy * dy;
+    }
 
     void addObjs(TowerObj* obj, TowerAOI* fromObjs = nullptr);
     void addWatchersObj(TowerObj* obj);
@@ -34,7 +39,19 @@ private:
     int transY(int y) const;
 
     TowerAOI* getTower(int x, int y);
-    void visitWatchedTowers(int x, int y, int range, std::function<void(TowerAOI*)>);
+
+    template <typename Function>
+    void visitWatchedTowersByWorld(int x, int y, int range, Function&& fn) {
+        int minX = transX(x - range);
+        int maxX = transX(x + range);
+        int minY = transY(y - range);
+        int maxY = transY(y + range);
+        for (int xi = minX; xi <= maxX; xi++) {
+            for (int yi = minY; yi <= maxY; yi++) {
+                fn(m_towers[xi][yi]);
+            }
+        }
+    }
 
     void initialize();
 
