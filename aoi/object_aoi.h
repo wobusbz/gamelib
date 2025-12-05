@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include <unordered_set>
 #include <vector>
 
 namespace aoi {
@@ -11,12 +12,12 @@ class TowerAOI;
 
 class TowerObj {
     friend class TowerAOI;
-    friend class GridAOIMannger;
-    friend class TowerAOIMannger;
+    friend class GridAOIManger;
+    friend class TowerAOIManger;
 
 public:
-    TowerObj();
-    virtual ~TowerObj();
+    TowerObj() : m_x(0), m_y(0), m_z(0), m_dist(0) {};
+    virtual ~TowerObj() = default;
     virtual void onEnter(std::vector<TowerObj*> other) = 0;
     virtual void onLeave(std::vector<TowerObj*> other) = 0;
     virtual uint64_t id() = 0;
@@ -35,6 +36,7 @@ protected:
     int m_z;
     int m_dist;
     TowerAOI* m_towerAOI = nullptr;
+    std::unordered_set<uint64_t> m_lastSeen;
 };
 } // namespace aoi
 

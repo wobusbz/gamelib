@@ -41,8 +41,9 @@ public:
 };
 
 int main(int argc, char** argv) {
-    aoi::GridAOIMannger gridMannger(0, 0, 1000, 1000, 10, 10);
-    aoi::TowerAOIMannger towerMannger(0, 1000, 0, 1000, 10);
+
+    aoi::GridAOIManger gridMannger(0, 0, 1000, 1000, 10, 10);
+    aoi::TowerAOIManger towerMannger(0, 1000, 0, 1000, 10);
     std::vector<Objec*> objs;
     for (int i = 1; i < 1000; i++) {
         Objec* obj = new Objec(i);

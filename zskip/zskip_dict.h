@@ -40,7 +40,33 @@ public:
     ZskipNode* zslGetNodeByRank(int64_t rank);
     int64_t zslGetNodeByRankNo(uint64_t score, std::string value);
     ZskipNode* zslGetNodeBySocre(uint64_t score);
-    void zslRange(int64_t min, int64_t max, bool reverse, std::function<void(ZskipNode* node)> callback);
+
+    template <typename Function>
+    void zslRange(int64_t min, int64_t max, bool reverse, Function&& fn) {
+        if (min > max) {
+            return;
+        }
+        max = m_Length < max ? m_Length : max;
+        ZskipNode* node;
+        if (reverse) {
+            node = zslGetNodeByRank(max - min);
+        } else {
+            node = zslGetNodeByRank(min);
+        }
+        if (!node) {
+            return;
+        }
+        int64_t span = max - min + 1;
+        while (node && span > 0) {
+            span--;
+            fn(node);
+            if (reverse) {
+                node = node->m_Backward;
+            } else {
+                node = node->m_Level[0]->m_Forward;
+            }
+        }
+    }
     int zslLen();
     void print();
 
@@ -131,7 +157,8 @@ public:
         m_Dict.erase(key);
     }
 
-    void zslRange(int min, int max, std::function<bool(std::string key, T ele)> callback, bool reverse = true) {
+    template <typename Function>
+    void zslRange(int min, int max, Function&& fn, bool reverse = true) {
         m_Zsl->zslRange(min, max, reverse, [&](ZskipNode* node) {
             if (!node) {
                 return;
@@ -140,10 +167,7 @@ public:
             if (it == m_Dict.end()) {
                 return;
             }
-            if (!callback) {
-                return;
-            }
-            if (callback(node->m_Value, it->second->getEle())) {
+            if (fn(node->m_Value, it->second->getEle())) {
                 return;
             }
         });
@@ -166,7 +190,7 @@ public:
     }
 
 private:
-    std::map<std::string, Element<T>*> m_Dict;
+    std::unordered_map<std::string, Element<T>*> m_Dict;
     ZskipList* m_Zsl;
     int64_t m_Level;
 };

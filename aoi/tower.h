@@ -1,6 +1,7 @@
 #ifndef __TOWER_H__
 #define __TOWER_H__
 
+#include <stdint.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -9,28 +10,12 @@
 
 namespace aoi {
 
-class TowerAOI {
-    friend class TowerAOIMannger;
+class TowerAOI;
 
-    static inline int dist2(TowerObj* a, TowerObj* b) {
-        int dx = a->x() - b->x();
-        int dy = a->y() - b->y();
-        return dx * dx + dy * dy;
-    }
-
-    void addObjs(TowerObj* obj, TowerAOI* fromObjs = nullptr);
-    void addWatchersObj(TowerObj* obj);
-    void removeObjs(TowerObj* obj, bool notify = false);
-    void removeWatchersObj(TowerObj* obj);
-
-    std::unordered_map<uint64_t, TowerObj*> m_objs;
-    std::unordered_map<uint64_t, TowerObj*> m_watchers;
-};
-
-class TowerAOIMannger {
+class TowerAOIManger {
 public:
-    TowerAOIMannger(int minX, int maxX, int minY, int maxY, int range);
-    virtual ~TowerAOIMannger();
+    TowerAOIManger(int minX, int maxX, int minY, int maxY, int range);
+    virtual ~TowerAOIManger();
     void enter(TowerObj* obj);
     void moved(TowerObj* obj, int x, int y);
     void leave(TowerObj* obj);
@@ -55,6 +40,8 @@ private:
         }
     }
 
+    std::vector<TowerObj*> collectVisibleObjsAtPos(TowerObj* obj, int x, int y) const;
+
     void initialize();
 
 private:
@@ -66,6 +53,24 @@ private:
     int m_xTowerNum;
     int m_yTowerNum;
     std::vector<std::vector<TowerAOI*>> m_towers;
+};
+
+class TowerAOI {
+    friend class TowerAOIManger;
+
+    static inline int dist2(TowerObj* a, TowerObj* b) {
+        int dx = a->x() - b->x();
+        int dy = a->y() - b->y();
+        return dx * dx + dy * dy;
+    }
+
+    void addObjs(TowerObj* obj);
+    void addWatchersObj(TowerObj* obj);
+    void removeObjs(TowerObj* obj, bool notify = false);
+    void removeWatchersObj(TowerObj* obj);
+
+    std::unordered_map<uint64_t, TowerObj*> m_objs;
+    std::unordered_map<uint64_t, TowerObj*> m_watchers;
 };
 
 } // namespace aoi

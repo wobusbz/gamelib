@@ -1,16 +1,13 @@
 #include "tower.h"
-#include <vector>
 
-aoi::TowerObj::TowerObj() : m_x(0), m_y(0), m_z(0), m_dist(0) {}
+namespace aoi {
 
-aoi::TowerObj::~TowerObj() {}
-
-aoi::TowerAOIMannger::TowerAOIMannger(int minX, int maxX, int minY, int maxY, int range)
+TowerAOIManger::TowerAOIManger(int minX, int maxX, int minY, int maxY, int range)
     : m_minX(minX), m_maxX(maxX), m_minY(minY), m_maxY(maxY), m_range(range), m_xTowerNum(0), m_yTowerNum(0) {
     initialize();
 }
 
-aoi::TowerAOIMannger::~TowerAOIMannger() {
+TowerAOIManger::~TowerAOIManger() {
     for (auto& it : m_towers) {
         for (auto& itr : it) {
             if (!itr) {
@@ -23,7 +20,7 @@ aoi::TowerAOIMannger::~TowerAOIMannger() {
     m_towers.clear();
 }
 
-int aoi::TowerAOIMannger::transX(int x) const {
+int TowerAOIManger::transX(int x) const {
     int tx = (x - m_minX) / m_range;
     if (tx < 0) {
         tx = 0;
@@ -33,7 +30,7 @@ int aoi::TowerAOIMannger::transX(int x) const {
     return tx;
 }
 
-int aoi::TowerAOIMannger::transY(int y) const {
+int TowerAOIManger::transY(int y) const {
     int ty = (y - m_minY) / m_range;
     if (ty < 0) {
         ty = 0;
@@ -43,17 +40,17 @@ int aoi::TowerAOIMannger::transY(int y) const {
     return ty;
 }
 
-aoi::TowerAOI* aoi::TowerAOIMannger::getTower(int x, int y) { return m_towers[transX(x)][transY(y)]; }
+TowerAOI* TowerAOIManger::getTower(int x, int y) { return m_towers[transX(x)][transY(y)]; }
 
-std::unordered_set<aoi::TowerAOI*> aoi::TowerAOIMannger::getWatchedTowers(int x, int y, int range) const {
+std::unordered_set<TowerAOI*> TowerAOIManger::getWatchedTowers(int x, int y, int range) const {
     std::unordered_set<aoi::TowerAOI*> towers;
     if (range < 0) {
         return towers;
     }
     int minX = transX(x - range);
     int maxX = transX(x + range);
-    int minY = transX(y - range);
-    int maxY = transX(y + range);
+    int minY = transY(y - range);
+    int maxY = transY(y + range);
     for (int xi = minX; xi <= maxX; xi++) {
         for (int yj = minY; yj <= maxY; yj++) {
             towers.insert(m_towers[xi][yj]);
@@ -62,7 +59,7 @@ std::unordered_set<aoi::TowerAOI*> aoi::TowerAOIMannger::getWatchedTowers(int x,
     return towers;
 }
 
-void aoi::TowerAOIMannger::initialize() {
+void TowerAOIManger::initialize() {
     m_xTowerNum = (m_maxX - m_minX) / m_range + 1;
     m_yTowerNum = (m_maxY - m_minY) / m_range + 1;
     m_towers.resize(m_xTowerNum);
@@ -74,7 +71,45 @@ void aoi::TowerAOIMannger::initialize() {
     }
 }
 
-void aoi::TowerAOIMannger::enter(TowerObj* obj) {
+std::vector<TowerObj*> TowerAOIManger::collectVisibleObjsAtPos(TowerObj* obj, int x, int y) const {
+    std::vector<TowerObj*> result;
+    if (!obj) {
+        return result;
+    }
+    int r2 = obj->dist() * obj->dist();
+    std::unordered_set<uint64_t> seen;
+    int minX = transX(x - obj->dist());
+    int maxX = transX(x + obj->dist());
+    int minY = transY(y - obj->dist());
+    int maxY = transY(y + obj->dist());
+    for (int xi = minX; xi <= maxX; xi++) {
+        for (int yi = minY; yi <= maxY; yi++) {
+            TowerAOI* towers = m_towers[xi][yi];
+            if (!towers) {
+                continue;
+            }
+            for (const auto& it : towers->m_objs) {
+                if (!it.second) {
+                    continue;
+                }
+                if (it.second->id() == obj->id()) {
+                    continue;
+                }
+                if (seen.find(it.second->id()) != seen.end()) {
+                    continue;
+                }
+                if (TowerAOI::dist2(obj, it.second) > r2) {
+                    continue;
+                }
+                seen.insert(it.second->id());
+                result.emplace_back(it.second);
+            }
+        }
+    }
+    return result;
+}
+
+void TowerAOIManger::enter(TowerObj* obj) {
     if (!obj) {
         return;
     }
@@ -83,9 +118,18 @@ void aoi::TowerAOIMannger::enter(TowerObj* obj) {
                               [&](aoi::TowerAOI* objTowerAOI) { objTowerAOI->addWatchersObj(obj); });
 
     getTower(obj->x(), obj->y())->addObjs(obj);
+
+    std::vector<TowerObj*> visible = collectVisibleObjsAtPos(obj, obj->x(), obj->y());
+    obj->m_lastSeen.clear();
+    for (auto o : visible) {
+        obj->m_lastSeen.insert(o->id());
+    }
 }
 
-void aoi::TowerAOIMannger::moved(TowerObj* obj, int x, int y) {
+void TowerAOIManger::moved(TowerObj* obj, int x, int y) {
+    if (!obj) {
+        return;
+    }
     if (obj->x() == x && obj->y() == y) {
         return;
     }
@@ -94,7 +138,7 @@ void aoi::TowerAOIMannger::moved(TowerObj* obj, int x, int y) {
     auto newTower = getWatchedTowers(x, y, obj->dist());
 
     std::vector<TowerAOI*> towersToLevels;
-    towersToLevels.resize(oldTower.size());
+    towersToLevels.reserve(oldTower.size());
     for (auto tower : oldTower) {
         if (newTower.find(tower) != newTower.end()) {
             continue;
@@ -103,7 +147,7 @@ void aoi::TowerAOIMannger::moved(TowerObj* obj, int x, int y) {
     }
 
     std::vector<TowerAOI*> towersToEnters;
-    towersToLevels.resize(oldTower.size());
+    towersToEnters.reserve(newTower.size());
     for (auto tower : newTower) {
         if (oldTower.find(tower) != oldTower.end()) {
             continue;
@@ -119,83 +163,117 @@ void aoi::TowerAOIMannger::moved(TowerObj* obj, int x, int y) {
         tower->addWatchersObj(obj);
     }
 
+    int oldx = obj->x();
+    int oldy = obj->y();
     obj->x(x);
     obj->y(y);
 
     auto newObjTower = getTower(x, y);
-    if (obj->m_towerAOI == newObjTower) {
-        return;
+    if (obj->m_towerAOI != newObjTower) {
+        if (obj->m_towerAOI) {
+            obj->m_towerAOI->removeObjs(obj);
+        }
+        newObjTower->addObjs(obj);
     }
-    if (obj->m_towerAOI) {
-        obj->m_towerAOI->removeObjs(obj);
+
+    std::unordered_set<uint64_t> prevSeen = obj->m_lastSeen;
+
+    std::vector<TowerObj*> nowObjs = collectVisibleObjsAtPos(obj, x, y);
+    std::unordered_set<uint64_t> nowIds;
+    nowIds.reserve(nowObjs.size());
+    for (auto o : nowObjs) {
+        nowIds.insert(o->id());
     }
-    newObjTower->addObjs(obj);
+
+    std::vector<TowerObj*> entered;
+    for (auto o : nowObjs) {
+        if (prevSeen.find(o->id()) == prevSeen.end()) {
+            entered.emplace_back(o);
+        }
+    }
+
+    std::vector<TowerObj*> left;
+    for (auto id : prevSeen) {
+        if (nowIds.find(id) == nowIds.end()) {
+            bool found = false;
+            int r = obj->dist();
+            int minX = transX(oldx - r);
+            int maxX = transX(oldx + r);
+            int minY = transY(oldy - r);
+            int maxY = transY(oldy + r);
+            for (int xi = minX; xi <= maxX && !found; xi++) {
+                for (int yi = minY; yi <= maxY && !found; yi++) {
+                    TowerAOI* t = m_towers[xi][yi];
+                    if (!t)
+                        continue;
+                    auto it = t->m_objs.find(id);
+                    if (it != t->m_objs.end()) {
+                        left.emplace_back(it->second);
+                        found = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!entered.empty()) {
+        obj->onEnter(entered);
+    }
+    if (!left.empty()) {
+        obj->onLeave(left);
+    }
+
+    obj->m_lastSeen.clear();
+    for (auto id : nowIds) {
+        obj->m_lastSeen.insert(id);
+    }
 }
 
-void aoi::TowerAOIMannger::leave(TowerObj* obj) {
+void TowerAOIManger::leave(TowerObj* obj) {
+    if (!obj) {
+        return;
+    }
+
     if (obj->m_towerAOI) {
         obj->m_towerAOI->removeObjs(obj, true);
     }
+
     visitWatchedTowersByWorld(obj->x(), obj->y(), obj->dist(),
                               [&](aoi::TowerAOI* objTowerAOI) { objTowerAOI->removeWatchersObj(obj); });
+
+    obj->m_lastSeen.clear();
 }
 
-void aoi::TowerAOI::addObjs(TowerObj* obj, TowerAOI* fromObjs) {
+void TowerAOI::addObjs(TowerObj* obj) {
+    if (!obj) {
+        return;
+    }
     obj->m_towerAOI = this;
     auto itObjs = m_objs.find(obj->id());
     if (itObjs == m_objs.end()) {
         m_objs[obj->id()] = obj;
     }
-    if (!fromObjs) {
-        for (auto& it : m_watchers) {
-            if (!it.second) {
-                continue;
-            }
-            if (it.second->id() == obj->id()) {
-                continue;
-            }
-            if (dist2(it.second, obj) > it.second->dist() * it.second->dist()) {
-                continue;
-            }
-            it.second->onEnter({obj});
+
+    std::vector<TowerObj*> other;
+    other.resize(1);
+    for (auto& it : m_watchers) {
+        TowerObj* watcher = it.second;
+        if (!watcher) {
+            continue;
         }
-    } else {
-        for (auto& it : fromObjs->m_watchers) {
-            if (!it.second) {
-                continue;
-            }
-            if (it.second->id() == obj->id()) {
-                continue;
-            }
-            auto itWatchers = m_watchers.find(it.second->id());
-            if (itWatchers != m_watchers.end()) {
-                continue;
-            }
-            if (dist2(it.second, obj) <= it.second->dist() * it.second->dist()) {
-                continue;
-            }
-            it.second->onLeave({obj});
+        if (watcher->id() == obj->id()) {
+            continue;
         }
-        for (auto& it : m_watchers) {
-            if (!it.second) {
-                continue;
-            }
-            if (it.second->id() == obj->id()) {
-                continue;
-            }
-            auto itWatchers = fromObjs->m_watchers.find(it.second->id());
-            if (itWatchers != fromObjs->m_watchers.end()) {
-                continue;
-            }
-            if (dist2(it.second, obj) > it.second->dist() * it.second->dist()) {
-                continue;
-            }
-            it.second->onEnter({obj});
+        int r2 = watcher->dist() * watcher->dist();
+        if (dist2(watcher, obj) > r2) {
+            continue;
         }
+        other[0] = obj;
+        watcher->onEnter(other);
     }
 }
 
-void aoi::TowerAOI::addWatchersObj(TowerObj* obj) {
+void TowerAOI::addWatchersObj(TowerObj* obj) {
     if (!obj) {
         return;
     }
@@ -203,7 +281,8 @@ void aoi::TowerAOI::addWatchersObj(TowerObj* obj) {
     if (itWatchers == m_watchers.end()) {
         m_watchers[obj->id()] = obj;
     }
-    std::vector<TowerObj*> objs(m_objs.size());
+    std::vector<TowerObj*> objs;
+    objs.reserve(m_objs.size());
     int r2 = obj->dist() * obj->dist();
     for (auto& it : m_objs) {
         if (!it.second) {
@@ -223,33 +302,47 @@ void aoi::TowerAOI::addWatchersObj(TowerObj* obj) {
     obj->onEnter(objs);
 }
 
-void aoi::TowerAOI::removeObjs(TowerObj* obj, bool notify) {
+void TowerAOI::removeObjs(TowerObj* obj, bool notify) {
+    if (!obj) {
+        return;
+    }
     m_objs.erase(obj->id());
     if (!notify) {
         return;
     }
+
+    std::vector<TowerObj*> other;
+    other.resize(1);
     for (auto& it : m_watchers) {
-        if (!it.second) {
+        TowerObj* watcher = it.second;
+        if (!watcher) {
             continue;
         }
-        if (it.second->id() == obj->id()) {
+        if (watcher->id() == obj->id()) {
             continue;
         }
-        if (dist2(obj, it.second) > it.second->dist() * it.second->dist()) {
+        int r2 = watcher->dist() * watcher->dist();
+        if (dist2(obj, watcher) > r2) {
             continue;
         }
-        it.second->onLeave({obj});
+        other[0] = obj;
+        watcher->onLeave(other);
     }
 }
 
-void aoi::TowerAOI::removeWatchersObj(TowerObj* obj) {
+void TowerAOI::removeWatchersObj(TowerObj* obj) {
     if (!obj) {
         return;
     }
     m_watchers.erase(obj->id());
-    std::vector<TowerObj*> objs(m_objs.size());
+
+    std::vector<TowerObj*> objs;
+    objs.reserve(m_objs.size());
     int r2 = obj->dist() * obj->dist();
     for (auto& it : m_objs) {
+        if (!it.second) {
+            continue;
+        }
         if (it.second->id() == obj->id()) {
             continue;
         }
@@ -263,3 +356,5 @@ void aoi::TowerAOI::removeWatchersObj(TowerObj* obj) {
     }
     obj->onLeave(objs);
 }
+
+} // namespace aoi

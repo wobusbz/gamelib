@@ -153,7 +153,6 @@ ZskipNode* ZskipList::zslGetNodeByRank(int64_t rank) {
 }
 
 int64_t ZskipList::zslGetNodeByRankNo(uint64_t score, std::string value) {
-    print();
     ZskipNode* head = m_Head;
     int64_t rank = 0;
     for (int i = m_Level - 1; i >= 0; i--) {
@@ -181,32 +180,6 @@ ZskipNode* ZskipList::zslGetNodeBySocre(uint64_t score) {
         }
     }
     return nullptr;
-}
-
-void ZskipList::zslRange(int64_t min, int64_t max, bool reverse, std::function<void(ZskipNode* node)> callback) {
-    if (!callback || min > max) {
-        return;
-    }
-    max = m_Length < max ? m_Length : max;
-    ZskipNode* node;
-    if (reverse) {
-        node = zslGetNodeByRank(max - min);
-    } else {
-        node = zslGetNodeByRank(min);
-    }
-    if (!node) {
-        return;
-    }
-    int64_t span = max - min + 1;
-    while (node && span > 0) {
-        span--;
-        callback(node);
-        if (reverse) {
-            node = node->m_Backward;
-        } else {
-            node = node->m_Level[0]->m_Forward;
-        }
-    }
 }
 
 int ZskipList::zslLen() { return m_Length; }

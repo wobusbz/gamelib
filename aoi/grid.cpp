@@ -1,24 +1,27 @@
 #include "grid.h"
+#include <cmath>
 
-aoi::Grid::Grid(int id) : m_gridId(id) {}
+namespace aoi {
 
-aoi::Grid::~Grid() { m_objs.clear(); }
+Grid::Grid(int id) : m_gridId(id) {}
 
-void aoi::Grid::addObjs(TowerObj* obj) {
+Grid::~Grid() { m_objs.clear(); }
+
+void Grid::addObjs(TowerObj* obj) {
     if (hasObjs(obj)) {
         return;
     }
     m_objs[obj->id()] = obj;
 }
 
-void aoi::Grid::removeObjs(TowerObj* obj) {
+void Grid::removeObjs(TowerObj* obj) {
     if (!hasObjs(obj)) {
         return;
     }
     m_objs.erase(obj->id());
 }
 
-bool aoi::Grid::hasObjs(TowerObj* obj) {
+bool Grid::hasObjs(TowerObj* obj) {
     auto itObjs = m_objs.find(obj->id());
     if (itObjs == m_objs.end()) {
         return false;
@@ -26,12 +29,12 @@ bool aoi::Grid::hasObjs(TowerObj* obj) {
     return true;
 }
 
-aoi::GridAOIMannger::GridAOIMannger(int minX, int minY, int maxX, int maxY, int xSize, int ySize)
+GridAOIManger::GridAOIManger(int minX, int minY, int maxX, int maxY, int xSize, int ySize)
     : m_minX(minX), m_minY(minY), m_maxX(maxX), m_maxY(maxY), m_xSize(xSize), m_ySize(ySize) {
     initGrid();
 }
 
-aoi::GridAOIMannger::~GridAOIMannger() {
+GridAOIManger::~GridAOIManger() {
     for (auto& it : m_grids) {
         if (!it.second) {
             continue;
@@ -42,7 +45,7 @@ aoi::GridAOIMannger::~GridAOIMannger() {
     m_grids.clear();
 }
 
-void aoi::GridAOIMannger::enter(TowerObj* obj) {
+void GridAOIManger::enter(TowerObj* obj) {
     auto itGrids = m_grids.find(gridId(obj->x(), obj->y()));
     if (itGrids == m_grids.end()) {
         return;
@@ -61,7 +64,7 @@ void aoi::GridAOIMannger::enter(TowerObj* obj) {
     obj->onEnter(objs);
 }
 
-void aoi::GridAOIMannger::moved(TowerObj* obj, int x, int y) {
+void GridAOIManger::moved(TowerObj* obj, int x, int y) {
     if (obj->x() == x && obj->y() == y) {
         return;
     }
@@ -112,7 +115,7 @@ void aoi::GridAOIMannger::moved(TowerObj* obj, int x, int y) {
     }
 }
 
-void aoi::GridAOIMannger::leave(TowerObj* obj) {
+void GridAOIManger::leave(TowerObj* obj) {
     auto itGrids = m_grids.find(gridId(obj->x(), obj->y()));
     if (itGrids == m_grids.end()) {
         return;
@@ -128,34 +131,9 @@ void aoi::GridAOIMannger::leave(TowerObj* obj) {
     obj->onLeave(objs);
 }
 
-int aoi::GridAOIMannger::gridId(int x, int y) { return transY(y) * m_xNum + transX(x); }
+int GridAOIManger::gridId(int x, int y) { return transY(y) * m_xNum + transX(x); }
 
-bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::function<void(Grid*)> cbFunc) {
-    auto itGrids = m_grids.find(gridId(obj->x(), obj->y()));
-    if (itGrids == m_grids.end() || !cbFunc) {
-        return false;
-    }
-    cbFunc(itGrids->second);
-    int x = transX(obj->x());
-    int y = transY(obj->y());
-    int dx[] = {-1, -1, -1, 0, 0, 1, 1, 1};
-    int dy[] = {-1, 0, 1, -1, 1, -1, 0, 1};
-    for (int i = 0; i < 8; i++) {
-        int newX = x + dx[i];
-        int newY = y + dy[i];
-        if (newX < 0 || newX >= m_xNum || newY < 0 || newY >= m_yNum) {
-            continue;
-        }
-        auto itNewGrids = m_grids.find(newY * m_xNum + newX);
-        if (itNewGrids == m_grids.end()) {
-            continue;
-        }
-        cbFunc(itNewGrids->second);
-    }
-    return true;
-}
-
-bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map<uint64_t, TowerObj*>& objs) {
+bool GridAOIManger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map<uint64_t, TowerObj*>& objs) {
     if (!visitWatchedGridObjs(obj, [&](Grid* gridObj) {
             for (auto& itGridObj : gridObj->m_objs) {
                 if (itGridObj.second->id() == obj->id()) {
@@ -169,7 +147,7 @@ bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::unordered_map
     return objs.size() > 0;
 }
 
-bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::vector<TowerObj*>& objs) {
+bool GridAOIManger::visitWatchedGridObjs(TowerObj* obj, std::vector<TowerObj*>& objs) {
     if (!visitWatchedGridObjs(obj, [&](Grid* gridObj) {
             for (auto& itGridObj : gridObj->m_objs) {
                 if (itGridObj.second->id() == obj->id()) {
@@ -183,7 +161,7 @@ bool aoi::GridAOIMannger::visitWatchedGridObjs(TowerObj* obj, std::vector<TowerO
     return objs.size() > 0;
 }
 
-void aoi::GridAOIMannger::initGrid() {
+void GridAOIManger::initGrid() {
     m_yNum = transY(m_maxY);
     m_xNum = transY(m_maxX);
     for (int y = 0; y < m_yNum; y++) {
@@ -194,7 +172,7 @@ void aoi::GridAOIMannger::initGrid() {
     }
 }
 
-int aoi::GridAOIMannger::transX(int x) {
+int GridAOIManger::transX(int x) {
     int tx = (int)(std::ceil(x - m_minX) / (double)m_xSize);
     if (tx < 0) {
         tx = 0;
@@ -202,10 +180,12 @@ int aoi::GridAOIMannger::transX(int x) {
     return tx;
 }
 
-int aoi::GridAOIMannger::transY(int y) {
+int GridAOIManger::transY(int y) {
     int ty = (int)(std::ceil(y - m_minY) / (double)m_ySize);
     if (ty < 0) {
         ty = 0;
     }
     return ty;
 }
+
+} // namespace aoi
